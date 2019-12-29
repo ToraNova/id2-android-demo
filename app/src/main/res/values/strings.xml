@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">ID2 Demo</string>
+    <string name="imp_but">Import</string>
+
+    <!--Default values-->
+    <string name="default_id">chia_jason96@live.com</string>
+    <string name="default_host">192.168.0.122</string>
+    <string name="default_port">8051</string>
+    <string name="prove_button_txt">Prove Yourself !</string>
+
+    <!--Hints-->
+    <string name="hint_host">Hostname or IPv4 address of the Verifier Server.</string>
+    <string name="hint_port">16-bit port number (1-65536) of the Verifier Server.</string>
+    <string name="hint_id">User identity to prove yourself as.</string>
+
+
+    <!--Default Text Indicators-->
+    <string name="ind_host">Verifier Host</string>
+    <string name="ind_port">Verifier Port</string>
+    <string name="ind_id">Identity</string>
+    <string name="ind_key">User Key</string>
+    <string name="ind_file">Key File</string>
+    <string name="header_network">Network Setup</string>
+    <string name="header_prover">Prover Setup</string>
+    <string name="pholder_file">Please import key file!</string>
+    <string name="pholder_key">...</string>
+
+    <string name="file_text">Select a User Key File</string>
+    <string name="file_mani">ID2 USK Import</string>
+
+</resources>

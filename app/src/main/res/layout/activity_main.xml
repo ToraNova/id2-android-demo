@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.toranova.id2.MainActivity">
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <TextView
+                    android:id="@+id/text0"
+                    style="?android:attr/listSeparatorTextViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:layout_column="2"
+                    android:layout_weight="1"
+                    android:text="@string/header_prover" />
+
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:id="@+id/uid_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/ind_id" />
+
+                <EditText
+                    android:id="@+id/uid_input"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/hint_id"
+                    android:inputType="text"
+                    android:text="@string/default_id" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginBottom="5dp">
+
+                <TextView
+                    android:id="@+id/dkey_file_txt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/ind_file" />
+
+                <TextView
+                    android:id="@+id/dkey_file"
+                    android:layout_height="20dp"
+                    android:layout_weight="1"
+                    android:text="@string/pholder_file" />
+
+            </TableRow>
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <TextView
+                    android:id="@+id/dkey_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_gravity="start"
+                    android:text="@string/ind_key" />
+
+                <TextView
+                    android:id="@+id/dkey_view"
+                    android:layout_width="fill_parent"
+                    android:layout_height="158dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/border0"
+                    android:ellipsize="none"
+                    android:gravity="left"
+                    android:typeface="monospace"
+                    android:maxLines="20"
+                    android:textSize="9sp"
+                    android:scrollHorizontally="false"
+                    android:text="@string/pholder_key" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <TextView
+                    android:id="@+id/text1"
+                    style="?android:attr/listSeparatorTextViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:layout_column="2"
+                    android:layout_weight="1"
+                    android:text="@string/header_network" />
+
+            </TableRow>
+
+
+            <TableRow>
+
+                <TextView
+                    android:id="@+id/net_host_txt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/ind_host" />
+
+                <EditText
+                    android:id="@+id/host_input"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/hint_host"
+                    android:inputType="text"
+                    android:text="@string/default_host" />
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:id="@+id/net_port_txt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="1"
+                    android:layout_marginEnd="10dp"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/ind_port" />
+
+                <EditText
+                    android:id="@+id/port_input"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/hint_port"
+                    android:inputType="number"
+                    android:text="@string/default_port" />
+
+            </TableRow>
+
+        </TableLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:id="@+id/prove_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/button0"
+                android:padding="10dp"
+                android:shadowColor="#A8A8A8"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="6"
+                android:text="@string/prove_button_txt"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/result"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:text=""
+                android:layout_weight="1"
+                app:layout_constraintBottom_toTopOf="@+id/prove_button"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
