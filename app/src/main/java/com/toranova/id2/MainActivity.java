@@ -25,10 +25,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -120,7 +122,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try {
                 String uskb64 = readTextFromUri(data.getData());
-                uskbuf = Base64.getDecoder().decode( uskb64.getBytes("UTF-8"));
+                //uskbuf = Base64.getDecoder().decode( uskb64.getBytes("UTF-8"));
+                uskbuf = Base64.getDecoder().decode( uskb64.getBytes());
                 Log.i(mTag,"Read USK base64: "+ uskb64 );
                 key_out.setText(uskb64);
                 key_file.setText( data.getData().getPath() );
@@ -157,13 +160,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected Integer doInBackground(String... args) {
 
-            prover = new VBLSProver(cparams[0], pid, uskbuf);
+            //TODO: allow user to choose different params
+            prover = new VBLSProver(cparams[2], pid, uskbuf);
 
             char[] rbuf = new char[1024];
             String hostname = args[0];
             int port = Integer.parseInt(args[1]);
 
             try {
+                int rc;
                 Log.i(mTag, "Connecting to " + hostname + ":" + port);
                 InetAddress serverAddr = InetAddress.getByName(hostname);
 
@@ -172,13 +177,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 //Opens a new writer to write to server
                 //Opens a new reader to read messages from server
-                PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                //PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                OutputStream out = socket.getOutputStream();
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                out.print(pid);
+                out.write(pid.getBytes(Charset.forName("UTF-8")));
                 out.flush();
                 Log.i(mTag, "Sent Ident:" + pid + "... Waiting for Go-Ahead (0x5A)");
-                in.read(rbuf, 0, 1); //wait for Go-Ahead 0x5A
+                rc = in.read(rbuf, 0, 1); //wait for Go-Ahead 0x5A
                 if (rbuf[0] != 0x5A) {
                     Log.e(mTag, "Failed to receive Go-Ahead (0x5A), ABORT");
                     out.close();
@@ -186,24 +192,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return 1;
                 }
                 Log.i(mTag, "Received Go-Ahead (0x5A)");
-                publishProgress("Received Go-Ahead (0x5A)");
-                out.print(prover.getCommit());
+                publishProgress("Received Go-Ahead (0x5A)"+rc);
+                out.write(prover.getCommit());
                 out.flush();
-                publishProgress("Commit Sent...");
-                in.read(rbuf, 0, prover.getCHAlength());
+                publishProgress("Commit Sent..."+rc);
+                rc = in.read(rbuf, 0, prover.getCHAlength());
                 publishProgress("Challenge Received...");
 
-                out.print(prover.getRSP(rbuf));
+                out.write(prover.getRSP(rbuf));
                 out.flush();
-                publishProgress("Response Sent...");
+                publishProgress("Response Sent..."+rc);
 
                 rbuf = new char[1];
-                in.read(rbuf, 0, 1);
+                rc =in.read(rbuf, 0, 1);
+                Log.d(mTag, rbuf.toString());
+                out.close();
+                in.close();
                 return Integer.parseInt(rbuf.toString());
             } catch (Exception e) {
                 Log.e(mTag, "Exception caught:", e);
             }
-            return 0;
+            return 1;
 
         }
 
