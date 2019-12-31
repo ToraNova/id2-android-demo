@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -36,7 +37,7 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final String mTag = "MainActivity";
+    private final String mTag = Constant.mTag;
     private static final int OPEN_FILE = 2;
 
     private VBLSProver prover;
@@ -69,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.w( Constant.debugTag, "onCreate: ");
         setContentView(R.layout.activity_main);
 
         idnt_in = findViewById(R.id.uid_input);
@@ -123,8 +123,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             try {
                 String uskb64 = readTextFromUri(data.getData());
                 //uskbuf = Base64.getDecoder().decode( uskb64.getBytes("UTF-8"));
-                uskbuf = Base64.getDecoder().decode( uskb64.getBytes());
-                Log.i(mTag,"Read USK base64: "+ uskb64 );
+                byte[] hld = Base64.getDecoder().decode( uskb64.getBytes() );
+                uskbuf = new byte[hld.length+1];
+                for(int i=0;i<hld.length;i++){
+                    uskbuf[i] = hld[i];
+                }
+                uskbuf[hld.length] = 0x00; //append final 00
+                //Log.i(mTag,"Read USK base64: "+ uskb64 );
                 key_out.setText(uskb64);
                 key_file.setText( data.getData().getPath() );
             }catch(Exception e){
@@ -161,9 +166,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         protected Integer doInBackground(String... args) {
 
             //TODO: allow user to choose different params
+            if(uskbuf == null){
+                return 2;
+            }
             prover = new VBLSProver(cparams[2], pid, uskbuf);
 
-            char[] rbuf = new char[1024];
+            byte[] rbuf = new byte[1024];
+            byte[] hld, sendID;
             String hostname = args[0];
             int port = Integer.parseInt(args[1]);
 
@@ -179,9 +188,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //Opens a new reader to read messages from server
                 //PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                 OutputStream out = socket.getOutputStream();
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                //BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                InputStream in = socket.getInputStream();
 
-                out.write(pid.getBytes(Charset.forName("UTF-8")));
+                hld = pid.getBytes(Charset.forName("UTF-8"));
+                sendID = new byte[hld.length+1]; //append c style string terminator
+                System.arraycopy(hld,0,sendID,0,hld.length);
+                sendID[hld.length] = 0x00;
+
+                out.write(sendID);
                 out.flush();
                 Log.i(mTag, "Sent Ident:" + pid + "... Waiting for Go-Ahead (0x5A)");
                 rc = in.read(rbuf, 0, 1); //wait for Go-Ahead 0x5A
@@ -192,24 +207,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return 1;
                 }
                 Log.i(mTag, "Received Go-Ahead (0x5A)");
-                publishProgress("Received Go-Ahead (0x5A)"+rc);
+                publishProgress("Received Go-Ahead (0x5A)");
                 out.write(prover.getCommit());
                 out.flush();
-                publishProgress("Commit Sent..."+rc);
+                publishProgress("Commit Sent...");
+                Log.i(mTag,"Commit Sent..."+rc);
                 rc = in.read(rbuf, 0, prover.getCHAlength());
-                publishProgress("Challenge Received...");
+                publishProgress("Challenge Received..."+rc);
 
                 out.write(prover.getRSP(rbuf));
                 out.flush();
-                publishProgress("Response Sent..."+rc);
+                publishProgress("Response Sent...");
+                Log.i(mTag,"Response Sent...");
 
-                rbuf = new char[1];
+                rbuf = new byte[1];
                 rc =in.read(rbuf, 0, 1);
-                Log.d(mTag, rbuf.toString());
                 out.close();
                 in.close();
-                return Integer.parseInt(rbuf.toString());
-            } catch (Exception e) {
+                if( rc < 1 || rbuf[0] != 0x00 ){
+                    Log.i(mTag, "Identification Denied (!0x00)");
+                    return 1;
+                }
+                Log.i(mTag, "Identification Success (0x00)");
+                return 0;
+            } catch( ConnectException e) {
+                Log.e(mTag, "Verifier Server not Up!");
+                return 3;
+
+            }catch (Exception e) {
                 Log.e(mTag, "Exception caught:", e);
             }
             return 1;
@@ -225,10 +250,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // required methods
         @Override
         protected void onPostExecute(Integer res) {
-            if (res.intValue() == 0) {
-                res_out.setText("Success");
-            } else {
-                res_out.setText("Fail");
+            switch( res.intValue()){
+                case 0:
+                    res_out.setText("ID Success 0x00");
+                    break;
+                case 1:
+                    res_out.setText("Verify Fail 0x01");
+                    break;
+                case 2:
+                    res_out.setText("No Key File Imported 0x02");
+                    break;
+                case 3:
+                    res_out.setText("Verifier Not Online 0x03");
+                    break;
+                default:
+                    res_out.setText("Unknown Error 0xFF");
+                    break;
             }
         }
     }

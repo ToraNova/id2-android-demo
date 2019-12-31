@@ -3,6 +3,8 @@ package com.toranova.id2;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.toranova.id2.Constant;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -26,7 +28,7 @@ http://gas.dia.unisa.it/projects/jpbc/docs/android.html
 
 public class VBLSProver {
 
-    private final String mTag = "toranova.id2.VBLSProver";
+    private final String mTag = Constant.mTag;
 
     private Pairing mPair;
     private byte rbit_byte;
@@ -57,6 +59,7 @@ public class VBLSProver {
     // usk - user's secret
     // param - curve params
     public VBLSProver(String param, String aid, byte[] usk){
+        StringBuilder sb;
         int rc, g1x;
         mPair = Id2_pairing.getPairing(param);
         //initialize fields
@@ -65,6 +68,11 @@ public class VBLSProver {
         Zr = mPair.getZr();
 
         Log.i(mTag, "cparam: G1/2/Zr SZ:"+ G1.getLengthInBytes() + "/" + G2.getLengthInBytes() + "/" + Zr.getLengthInBytes());
+        //append a 00 onto aid buffer to match
+        byte[] hld = aid.getBytes();
+        byte[] idbuf = new byte[hld.length+1];
+        System.arraycopy(hld,0,idbuf,0,hld.length);
+        idbuf[hld.length] = 0x00; //null terminator C-style strings
 
         //initialize elements
         CMT = G1.newElement();
@@ -73,12 +81,39 @@ public class VBLSProver {
         RSP = G1.newElement();
         me_Usk = (Point) G1.newElement();
         me_X2 = (Point) G1.newElement();
-        //me_hash = G1.newElementFromHash(aid.getBytes(Charset.forName("UTF-8")),0,aid.length());
+        me_hash = G1.newElementFromHash( idbuf,0, idbuf.length );
+
+        /*
+        byte[] fixedT = {
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+        me_nonce = Zr.newElementFromBytes(fixedT);
+        */
+
         me_nonce = Zr.newRandomElement(); //obtain nonce t
-        me_hash = G1.newElement().setFromHash( aid.getBytes(Charset.forName("UTF-8")), 0, aid.length());
+
+
+        //me_hash = G1.newElement().setFromHash( aid.getBytes(Charset.forName("UTF-8")), 0, aid.length());
+
+        //MATCHED : me_hash me_Rbit
+        //TODO: me_Usk, me_X2
+
+        /*
+        sb = new StringBuilder();
+        sb.append("[");
+        for (byte b : me_hash.toBytes()) {
+            sb.append(String.format("%02X", b));
+        }
+        sb.append("]");
+        Log.d(mTag, sb.toString());
+        */
 
         g1x = G1.getLengthInBytes()/2;
-        rbit_byte = usk[g1x];
+        rbit_byte = usk[g1x+1];
         me_Rbit.set( rbit_byte ); //obtain the rbit
 
         Log.d(mTag,"usk-sz:"+usk.length+" g1X-sz:"+g1x);
@@ -86,7 +121,7 @@ public class VBLSProver {
         rc = me_Usk.setFromBytesCompressed( usk, 0);
         Log.d(mTag,"usk-frombytes:"+rc);
         //me_X2.setFromBytes( usk , G1.getLengthInBytes()/2+1);
-        rc = me_X2.setFromBytesCompressed( usk, g1x);
+        rc = me_X2.setFromBytesCompressed( usk, g1x+2);
         Log.d(mTag,"X2-frombytes:"+rc);
 
         //confirming Rbit is correct
@@ -94,10 +129,14 @@ public class VBLSProver {
         //unable to convert usk, hash, x2 to int as they have x,y coord
 
         /*
-        StringBuilder sb = new StringBuilder();
-        sb.append("[ ");
-        for (byte b : usk) {
-            sb.append(String.format("0x%02X ", b));
+        sb = new StringBuilder();
+        sb.append("[");
+        for (byte b : me_Usk.toBytesCompressed()) {
+            sb.append(String.format("%02X", b));
+        }
+        sb.append(",\n");
+        for (byte b : me_X2.toBytesCompressed()) {
+            sb.append(String.format("%02X", b));
         }
         sb.append("]");
         Log.d(mTag, sb.toString());
@@ -105,25 +144,16 @@ public class VBLSProver {
 
     }
 
-    public byte[] charsToBytes(char[] chars){
-        Charset charset = Charset.forName("UTF-8");
-        ByteBuffer byteBuffer = charset.encode(CharBuffer.wrap(chars));
-        return Arrays.copyOf(byteBuffer.array(), byteBuffer.limit());
-    }
-
-    public char[] bytesToChars(byte[] bytes){
-        Charset charset = Charset.forName("UTF-8");
-        CharBuffer charBuffer = charset.decode(ByteBuffer.wrap(bytes));
-        return Arrays.copyOf(charBuffer.array(), charBuffer.limit());
-    }
-
     //obtain response from challenge
-    public byte[] getRSP(char [] chabuf){
-        CHA = Zr.newElementFromBytes(charsToBytes(chabuf));
-        RSP = me_nonce.add(CHA);
-        RSP = me_Usk.powZn(RSP);
+    public byte[] getRSP(byte [] chabuf){
+        CHA = Zr.newElementFromBytes(chabuf);
+        Log.d(mTag,"Received CHA:"+CHA.toBigInteger().toString());
+        me_nonce = me_nonce.add(CHA);
+        RSP = me_Usk.powZn(me_nonce);
+        Point sendRSP;
+        sendRSP = (Point) RSP;
         //return bytesToChars( RSP.toBytes() );
-        return RSP.toBytes();
+        return sendRSP.toBytesCompressed();
     }
 
     public int getCHAlength(){
@@ -132,20 +162,9 @@ public class VBLSProver {
 
     public byte[] getCommit(){
 
-        /*
-        StringBuilder sb = new StringBuilder();
-        sb.append("[ ");
-        for (byte b : me_hash.toBytes()) {
-            sb.append(String.format("0x%02X ", b));
-        }
-        sb.append("]");
-        Log.d(mTag, sb.toString());
-         */
-
         //Log.d(mTag, "HASH:"+me_hash.toBigInteger().toString());
         //Log.d(mTag, "X2:"+me_X2.toBigInteger().toString());
         //Log.d(mTag, "RB:"+me_Rbit.toBigInteger().toString());
-
 
         CMT = me_X2.powZn(me_Rbit);
         CMT = CMT.mul(me_hash);
@@ -154,9 +173,7 @@ public class VBLSProver {
         int clen = sendCMT.getLengthInBytesCompressed();
         byte[] out = new byte[clen+1];
         byte[] hld = sendCMT.toBytesCompressed();
-        for( int i=0;i<hld.length;i++){
-            out[i] = hld[i];
-        }
+        System.arraycopy(hld,0,out,0,clen);
         out[clen] = rbit_byte;
         Log.d(mTag, "Last CMT byte (RBIT) @ pos "+clen+" : "+ out[clen]);
         //return bytesToChars( out );
