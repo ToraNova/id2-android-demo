@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">ID2 Demo</string>
-    <string name="imp_but">Import</string>
+    <string name="imp_key">Import User Key</string>
+    <string name="imp_par">Import Parameters</string>
 
     <!--Default values-->
     <string name="default_id">chia_jason96@live.com</string>
@@ -20,6 +21,7 @@
     <string name="ind_id">Identity</string>
     <string name="ind_key">User Key</string>
     <string name="ind_file">Key File</string>
+    <string name="ind_par">Parameters</string>
     <string name="header_network">Network Setup</string>
     <string name="header_prover">Prover Setup</string>
     <string name="pholder_file">Please import key file!</string>
